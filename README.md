@@ -1,1 +1,1 @@
-Required libraries `numpy`, `scipy`, `matplotlib`, `statsmodels`, `sklearn`.
+Required libraries: `numpy`, `scipy`, `matplotlib`, `statsmodels`, `sklearn`.
