@@ -1,0 +1,597 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T2A]{fontenc}
+\usepackage[russian]{babel}
+
+\frenchspacing
+
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\usepackage{multirow}
+
+\usepackage{geometry}
+\geometry{a4paper, left=30mm, top=20mm, right=30mm, bottom=20mm}
+
+\usepackage{graphicx}
+\usepackage[justification=centering]{caption}
+
+\usepackage{indentfirst}
+
+\usepackage{tocloft}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+\usepackage{tabularx}
+
+%\usepackage{cellspace}
+
+%\setlength{\cellspacetoplimit}{-2pt}
+%\setlength{\cellspacebottomlimit}{-2pt}
+
+%\setlength{\cellspaceleftlimit}{2pt}
+%\setlength{\cellspacerightlimit}{2pt}
+
+\setlength{\tabcolsep}{2pt}
+
+%\usepackage{setspace}
+%\setstretch{1.0}
+\linespread{1.25}
+%\parindent=1.25cm
+
+\newcommand{\rank}{\operatorname{rank}}
+
+\newcommand{\row}{\operatorname{row}}
+%\newcommand{\col}{\operatorname{col}}
+
+\newcommand{\tran}{\mathbf{T}}
+%\newcommand{\Herm}{\mathbf{H}}
+
+\newcommand{\naturals}{\mathbb{N}}
+\newcommand{\reals}{\mathbb{R}}
+
+\newcommand{\probability}{\mathbb{P}}
+\newcommand{\expectation}{\mathbb{E}}
+\newcommand{\dispersion}{\mathbb{D}}
+\newcommand{\Cov}{\operatorname{Cov}}
+
+\newcommand{\normallaw}{\mathcal{N}}
+\newcommand{\Laplacelaw}{\mathcal{L}}
+\newcommand{\logisticlaw}{\operatorname{Log}}
+\newcommand{\Cauchylaw}{\mathcal{C}}
+\newcommand{\Studentlaw}{\operatorname{St}}
+\newcommand{\Tukeylaw}{\operatorname{CN}}
+
+\newcommand{\bi}[1]{\textbf{\textit{#1}}}
+
+\newcommand{\vspacing}{\vspace{8pt}}
+
+\newcommand{\definition}{\textbf{Определение.}}
+\newcounter{theoremcounter}
+\newcommand{\theorem}{
+	\refstepcounter{theoremcounter}
+	\textbf{Теорема \arabic{theoremcounter}.}
+}
+\newcommand{\theoremnamed}[1]{
+	\refstepcounter{theoremcounter}
+	\textbf{Теорема \arabic{theoremcounter} (#1).}
+}
+
+\begin{document}
+	
+	\setcounter{page}{3}
+	
+	\begin{center}
+		\tableofcontents
+	\end{center}
+	
+	\newpage
+	\begin{center}
+		\section*{Введение}
+	\end{center}
+	\addcontentsline{toc}{section}{Введение}
+	
+	Линейная регрессия является фундаментальным и наиболее распространённым инструментом статистического моделирования и анализа данных в экономике, социологии, биологии, технических и естественных науках. Традиционный метод наименьших квадратов (МНК), лежащий в основе классической регрессии, обеспечивает ценные свойства оценок (состоятельность, несмещённость, СК-оптимальность в классе линейных несмещённых) при выполнении условий теоремы Гаусса --- Маркова (нулевое среднее, гомоскедастичность и некоррелированность случайных ошибок модели).
+	
+	Однако на практике исследователь часто сталкивается с данными, характеристики которых существенно отклоняются от идеализированных предположений. Особую проблему представляют аддитивные шумы с «тяжёлыми хвостами» распределения (например, распределение Лапласа, Коши, смеси нормальных распределений), наличие в выборке аномальных наблюдений (выбросов), а также коррелированность аддитивного шума. В таких условиях оценки МНК демонстрируют резкую потерю качества: чувствительность к выбросам приводит к их существенному смещению и высокой дисперсии. Следствием является снижение точности прогноза, некорректность проверки статистических гипотез о значимости параметров и, как итог, принятие ошибочных содержательных выводов. Ответом на эту проблему стала разработка робастных методов оценивания, которые более устойчивы к умеренным нарушениям исходных предпосылок модели.
+	
+	Целью данной работы является сравнительный анализ качества оценок параметров линейной регрессии, полученных с помощью МНК, метода наименьших модулей (МНМ), а также М-оценками Хьюбера и Тьюки, при различных типах аддитивных шумов на основе вычислительного эксперимента.
+	
+	Для достижения поставленной цели необходимо решить следующие задачи.
+	\begin{enumerate}
+		\item Провести аналитический обзор классических и робастных методов оценивания параметров линейной регрессии (МНК, МНМ, М-оценки Хьюбера и Тьюки), формализовать их ключевые свойства.
+		\item Провести вычислительный эксперимент, состоящий в генерации синтетических обучающих выборок с разными аддитивными шумами и обучении линейной регрессии вышеперечисленными методами.
+		\item Сделать выводы о применимости методов оценивания, анализируя результаты вычислительного эксперимента.
+	\end{enumerate}
+	
+	\newpage
+	\begin{center}
+		\section{Теория}
+	\end{center}
+	
+	\definition\ \bi{Линейной регрессией} называют математическую модель
+	\begin{equation}
+		\label{regmodel}
+		y = \sum_{j=0}^{D} w_j \, x_j = w_0 + \sum_{j=1}^{D} w_j \, x_j,
+	\end{equation}
+	где $x_0 = 1, \, x_1 \in \reals, \, \ldots, \, x_D \in \reals$ --- входные переменные (факторы), $y \in \reals$ "--- выходная переменная (отклик), $w_0, \, \ldots, \, w_D$ "--- параметры (веса) модели, $D$ "--- размерность факторного пространства.
+	
+	Имеется некоторая неизвестная недетерминированная зависимость переменной $y$ от переменных $x_1, \, \ldots, \, x_D$, имеющая вид
+	\begin{equation}
+		\label{relation}
+		y = \sum_{j=0}^{D} w_j \, x_j + \varepsilon,
+	\end{equation}
+	где $w_0 \in \reals, \, \ldots, \, w_D \in \reals$ --- константы (параметры зависимости), $\varepsilon$ --- случайный шум с нулевым средним, т.\,е. $\expectation \, \varepsilon = 0$. Требуется построить приближение этой зависимости с помощью модели \eqref{regmodel}. Для этого используется некоторая оценка $\widehat{W}(X,\,Y) \in \reals^{D+1}$ параметров зависимости, где
+	\begin{equation}
+		\label{sample}
+		X := \begin{bmatrix}
+			1      & x_{11} & \ldots & x_{1D} \\
+			%1      & x_{21} & \ldots & x_{2D} \\
+			\vdots & \vdots &        & \vdots \\
+			1      & x_{N1} & \ldots & x_{ND}
+		\end{bmatrix}\!,
+		\quad
+		Y := \begin{bmatrix}
+			y_1 \\ \vdots \\ y_N
+		\end{bmatrix}
+	\end{equation}
+	--- матрицы факторов и откликов, где $x_{ij}$ --- $j$-й фактор при $i$-м наблюдении, $y_i$ "--- отклик при $i$-м наблюдении.
+	
+	%\definition\ Пару $(X,\,Y)$ матриц \eqref{sample} будем называть обучающей выборкой.
+	
+	\definition\ \bi{Оценкой метода наименьших квадратов} (МНК-оцен\-кой) называется оценка параметров зависимости \eqref{relation}, задаваемая как
+	\begin{equation*}
+		\widehat{W}^{L_2}(X,\,Y) := \mathop{\arg\min}_{ w_0, \, \ldots, \, w_D } \sum_{i=1}^{N} \left( y_i - w_0 - \sum_{j=1}^{D} w_j \, x_{ij} \right)^{\!2} = ( X^\tran X )^{-1} X^\tran Y.
+	\end{equation*}
+	
+	\definition\ \bi{Оценкой метода наименьших модулей} (МНМ-оцен\-кой) называется оценка параметров зависимости \eqref{relation}, задаваемая как
+	\begin{equation*}
+		\widehat{W}^{L_1}(X,\,Y) := \mathop{\arg\min}_{ w_0, \, \ldots, \, w_D } \sum_{i=1}^{N} \left| y_i - w_0 - \sum_{j=1}^{D} w_j \, x_{ij} \right|\!.
+	\end{equation*}
+
+	\definition\ \bi{М-оценками} называются оценки параметров зависимости \eqref{relation}, задаваемые как
+	\begin{equation*}
+		\widehat{W}^{M}(X,\,Y) := \mathop{\arg\min}_{ w_0, \, \ldots, \, w_D } \sum_{i=1}^{N} \rho \left( \frac{1}{\widehat{s}} \left( y_i - w_0 - \sum_{j=1}^{D} w_j \, x_{ij} \right) \right)\!,
+	\end{equation*}
+	где $\widehat{s}$ --- оценка неизвестного параметра масштаба $s$ погрешностей $\varepsilon$, $\rho(z)$ --- функция потерь, удовлетворяющая условиям чётности, неубывания по $|z|$ и $\rho(0)=0$ \cite{reg}.
+	
+	Наиболее распространены М-оценки $\widehat{W}^{MH}(X,\,Y)$ и $\widehat{W}^{MT}(X,\,Y)$, где в качестве функции потерь выступает функция потерь Хьюбера
+	\begin{equation*}
+		\rho_H(z) := \begin{cases}
+			z^2         & |z| \le c, \\
+			2c|z| - c^2 & |z| > c
+		\end{cases}
+	\end{equation*}
+	и функция потерь Тьюки
+	\begin{equation*}
+		\rho_T(z) := \begin{cases}
+			1 - \left( 1 - \left( \frac{z}{c} \right)^{\!2} \right)^{\!3} & |z| \le c, \\
+			1 & |z| > c
+		\end{cases}
+	\end{equation*}
+	соответственно \cite{reg}.
+	
+	\definition\ Будем говорить, что матрицы $X$ и $Y$, задаваемые выражениями \eqref{sample}, удовлетворяют \bi{условиям Гаусса --- Маркова}, если $\rank X = 1 + D$, $1 + D \leq N$ и справедливо соотношение
+	\begin{equation*}
+		Y = XW + E,
+	\end{equation*}
+	где $W := \left[ w_0 \ldots w_D \right]^\tran$ --- столбец параметров зависимости, $E := \left[ \varepsilon_1 \ldots \varepsilon_N \right]^\tran$ "--- столбец случайных шумов, причём 
+	\begin{itemize}
+		\item $\expectation \, \varepsilon_i = 0$, где $i=\overline{1,\,N}$;
+		\item $\Cov E = \sigma^2 I_N$, где $\sigma^2 := \dispersion \, \varepsilon_i$ "--- дисперсия случайных шумов $\varepsilon_i$, $i=\overline{1,\,N}$, а $I_N$ "--- единичная матрица размерности $N \times N$.
+	\end{itemize}
+	
+	\theorem\ Пусть матрицы $X$ и $Y$, задаваемые выражениями \eqref{sample}, удовлетворяют условиям Гаусса --- Маркова со столбцом параметров зависимости~$W$. Тогда МНК-оцен\-ка $\widehat{W}^{L_2}(X,\,Y)$, МНМ-оцен\-ка $\widehat{W}^{L_1}(X,\,Y)$, а также М-оцен\-ки $\widehat{W}^{MH}(X,\,Y)$ и $\widehat{W}^{MT}(X,\,Y)$ являются несмещёнными и состоятельными оценками столбца параметров $W$. \vspacing
+	
+	\theoremnamed{Гаусса --- Маркова}\ Пусть матрицы $X$ и $Y$, задаваемые выражениями \eqref{sample}, удовлетворяют условиям Гаусса --- Маркова со столбцом параметров зависимости~$W$. Тогда МНК-оцен\-ка $\widehat{W}^{L_2}(X,\,Y)$ является СК-оп\-ти\-маль\-ной в классе линейных по $Y$ несмещённых оценок столбца параметров $W$.~\cite{stat}~\vspacing
+	
+	\theorem\ Пусть матрицы $X$ и $Y$, задаваемые выражениями \eqref{sample}, удовлетворяют условиям Гаусса --- Маркова со столбцом параметров зависимости~$W$ и столбцом случайных шумов $\left[ \varepsilon_1 \ldots \varepsilon_N \right]^\tran$, причём $\varepsilon_i \sim \normallaw(0, \, \sigma^2)$, $i=\overline{1,\,N}$. Тогда МНК-оценка $\widehat{W}^{L_2}(X,\,Y)$ является оценкой максимального правдоподобия столбца параметров $W$. \vspacing
+	
+	\theorem\ Пусть матрицы $X$ и $Y$, задаваемые выражениями \eqref{sample}, удовлетворяют условиям Гаусса --- Маркова со столбцом параметров зависимости~$W$ и столбцом случайных шумов $\left[ \varepsilon_1 \ldots \varepsilon_N \right]^\tran$, причём $\varepsilon_i \sim \Laplacelaw(0, \, s)$, $i=\overline{1,\,N}$. Тогда МНМ-оценка $\widehat{W}^{L_1}(X,\,Y)$ является оценкой максимального правдоподобия столбца параметров $W$.
+	
+	Приведём асимптотические распределения рассматриваемых оценок. Потребуем, чтобы матрица $X$ удовлетворяла следующим условиям:
+	\begin{itemize}
+		\item $\lim\limits_{N\to\infty} \frac1N X^\tran X =: \Sigma$, где $\Sigma$ --- положительно определённая матрица;
+		\item $\lim\limits_{N\to\infty} \max\limits_{i=\overline{1,\,N}} \frac { x_{ij}^2 } { \sum_{l=1}^N x_{lj}^2 } = 0$, где $j=\overline{0,\,D}$.
+	\end{itemize}
+	Тогда асимптотические распределения оценок имеют следующий вид.
+	\begin{itemize}
+		\item Метод наименьших квадратов:
+		\begin{equation*}
+			\sqrt{N} (\widehat{W}^{L_2}(X,\,Y)-W) \;\mathop{\longrightarrow}\limits^{d}_{N\to\infty}\; \normallaw \left( 0, \, \sigma^2\,\Sigma^{-1} \right)\!,
+		\end{equation*}
+		где $\Sigma := \lim\limits_{N\to\infty} \frac1N X^\tran X$, $\sigma^2 := \dispersion\,\varepsilon_i$ --- дисперсия случайных шумов \cite{reg, asympt1}.
+		\item Метод наименьших модулей:
+		\begin{equation*}
+			\sqrt{N} (\widehat{W}^{L_1}(X,\,Y)-W) \;\mathop{\longrightarrow}\limits^{d}_{N\to\infty}\; \normallaw \left( 0, \, (2f(0))^{-2}\,\Sigma^{-1} \right)\!,
+		\end{equation*}
+		где $\Sigma := \lim\limits_{N\to\infty} \frac1N X^\tran X$, $f$ --- функция плотности распределения случайных шумов \cite{reg, asympt2, asympt3, asympt4}.
+		\item М-оценки:
+		\begin{equation*}
+			\sqrt{N} (\widehat{W}^{M}(X,\,Y)-W) \;\mathop{\longrightarrow}\limits^{d}_{N\to\infty}\; \normallaw \left( 0, \, \frac{as^2}{b}\,\Sigma^{-1} \right)\!,
+		\end{equation*}
+		где $\Sigma := \lim\limits_{N\to\infty} \frac1N X^\tran X$, $a := \expectation \left[ \rho'(\frac{\varepsilon}{s})^2 \right]$, $b := \expectation \left[ \rho''(\frac{\varepsilon}{s}) \right]$, $s$ --- такое число, что $\widehat{s} \mathop{\longrightarrow}\limits^{\probability}_{N\to\infty} s$, а также выполняется условие $\sqrt{N} (\widehat{s}-s) \mathop{\longrightarrow}\limits^{d}_{N\to\infty} 0$ \cite{reg, asympt5}.
+	\end{itemize}
+	
+	\newpage
+	\begin{center}
+		\section{Генерация синтетических выборок и модели аддитивного шума}
+	\end{center}
+	
+	Практическая часть работы состоит в оценивании качества результатов приближения зависимости \eqref{relation} моделью \eqref{regmodel} при $D = 1$ с помощью МНК-оценки, МНМ-оценки, М-оценок Хьюбера и Тьюки при различных аддитивных шумах.
+	
+	Сначала получим синтетические обучающие выборки. Для этого на равномерной сетке
+	\begin{equation*}
+		\left\{ x_i \middle| x_i = \frac{i-1}{N-1}, \, i = \overline{1,\,N} \right\}
+	\end{equation*}
+	для $N = 101$ построим сеточные функции по формуле
+	\begin{equation*}
+		y_i = w_0 + w_1 \, x_i + \varepsilon_i, \quad i = \overline{1,\,N},
+	\end{equation*}
+	где $w_0 = 3$ и $w_1 = 2$ --- истинные значения параметров модели, $\left\{ \varepsilon_i \right\}$ --- временной ряд с нулевым средним. В качестве вариантов $\left\{ \varepsilon_i \right\}$ будем использовать
+	\begin{itemize}
+		\item модели дискретного белого шума;
+		\item модели авторегрессии I порядка, задаваемые уравнением
+		\begin{equation*}
+			\varepsilon_i = \alpha_1 \, \varepsilon_{i-1} + \xi_i,
+		\end{equation*}
+		где $\alpha_1 = 0.5$ --- параметр модели авторегрессии, $\left\{ \xi_i \right\}$ --- дискретный белый шум. Оценки параметров $\alpha_1,\,\ldots,\,\alpha_p$ модели стационарной авторегрессии порядка $p$ можно получить, решив систему уравнений Юла --- Уолкера, при I порядке имеющую вид $\widehat\alpha_1 = \widehat\rho_{\varepsilon}(1)$, где $\widehat\rho_{\varepsilon}$ --- выборочная автокорреляционная функция при траектории $\varepsilon$.
+	\end{itemize}
+	В моделях аддитивного шума будем использовать следующие распределения.
+	\begin{itemize}
+		\item Нормальное (Гауссово) распределение $\normallaw(\mu,\,\sigma^2)$ имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\normallaw(\mu,\,\sigma^2)}(x) := \frac{1}{\sqrt{2\pi}\sigma} \exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)\!,
+		\end{equation*}
+		математическое ожидание $\expectation\,\xi = \mu$ и дисперсию $\dispersion\,\xi = \sigma^2$.
+		\item Распределение Лапласа $\Laplacelaw(\mu,\,s)$ имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\Laplacelaw(\mu,\,s)}(x) := \frac{1}{2s} \exp\left(-\frac{|x-\mu|}{2s}\right)\!,
+		\end{equation*}
+		математическое ожидание $\expectation\,\xi = \mu$ и дисперсию $\dispersion\,\xi = 2s^2$.
+		\item Логистическое распределение $\logisticlaw(\mu,\,s)$ имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\logisticlaw(\mu,\,s)}(x) := \frac1s \frac { \exp\left(-\frac{x-\mu}{s}\right) } { \left(1+\exp\left(-\frac{x-\mu}{s}\right)\right)^2 },
+		\end{equation*}
+		математическое ожидание $\expectation\,\xi = \mu$ и дисперсию $\dispersion\,\xi = \frac{\pi^2}{3} s^2$.
+		\item Распределение Стьюдента $\Studentlaw_n(\mu,\,s)$ имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\Studentlaw_n(\mu,\,s)}(x) := \frac{1}{\sqrt{n\pi}s} \frac{\Gamma\left(\frac{1+n}{2}\right)}{\Gamma\left(\frac{n}{2}\right)} \left(1+\frac{(x-\mu)^2}{ns^2}\right)^{\!-\frac{1+n}{2}}\!,
+		\end{equation*}
+		математическое ожидание $\expectation\,\xi = \mu$ при $n > 1$ и дисперсию $\dispersion\,\xi = \frac{n}{n-2} s^2$ при $n > 2$. Параметр $n \in \naturals$ называется числом степеней свободы. Говорят, что распределение $\Studentlaw_n(\mu,\,s)$ имеет $n$ степеней свободы. Распределение Стьюдента с 1 степенью свободы также известно как распределение Коши, имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\Studentlaw_1(\mu,\,s)}(x) := \frac{1}{\pi s} \frac {1} { 1 + \left(\frac{x-\mu}{s}\right)^2 }
+		\end{equation*}
+		и не имеет конечных математического ожидания и дисперсии. Распределение Стьюдента с 2 степенями свободы имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\Studentlaw_2(\mu,\,s)}(x) := \frac{1}{s} \left( 2 + \left(\frac{x-\mu}{s}\right)^{\!2} \right)^{\!-\frac32}\!,
+		\end{equation*}
+		математическое ожидание $\expectation\,\xi = \mu$ и не имеет конечной дисперсии.
+		\item Загрязнённое нормальное распределение (распределение Тьюки --- Хьюбера) $\Tukeylaw(\mu,\,\sigma_1,\,\sigma_2,\,r)$ имеет функцию плотности вероятности
+		\begin{equation*}
+			f_{\Tukeylaw(\mu,\,\sigma_1,\,\sigma_2,\,r)}(x) := (1-r) f_{\normallaw(\mu,\,\sigma_1^2)}(x) + r f_{\normallaw(\mu,\,\sigma_2^2)}(x),
+		\end{equation*}
+		математическое ожидание $\expectation\,\xi = \mu$ и дисперсию $\dispersion\,\xi = (1-r) \sigma_1^2 + r \sigma_2^2$.
+	\end{itemize}
+	Для генерации аддитивных шумов будем использовать значения параметров распределений $\mu = 0$, $s = \sigma = \sigma_1 = 0.1$, $\sigma_2 = 1$, $r = 0.1$, а также числа степеней свободы $n = \overline{1,\,4}$ для распределения Стьюдента. Для каждой модели аддитивного шума $\left\{ \varepsilon_i \right\}$ сгенерируем $S = 100$ реализаций. Для каждой пары $(\widehat{W}\!,\,\mathcal{M})$ из метода оценки параметров $\widehat{W}$ и модели шума $\mathcal{M}$ вычислим $S$ оценок параметров $\widehat{W}$\!, соответствующих реализациям шума модели $\mathcal{M}$: $\widehat{w}_j^k$, $j=\overline{0,\,1}$, $k=\overline{1,\,S}$. В качестве результатов вычислительного эксперимента будем рассматривать значения среднего, СК-отклонения и относительной погрешности среднего:
+	\begin{equation*}
+		\langle\widehat{w}_j\rangle := \frac1S \sum_{k=1}^S \widehat{w}_j^k,
+		\quad
+		\widehat{\sigma}(\widehat{w}_j) := \sqrt{ \frac{1}{S-1} \sum_{k=1}^S \left( \widehat{w}_j^k - \langle\widehat{w}_j\rangle \right)^2 }\!,
+		\quad
+		\delta(\widehat{w}_j) := \left| \frac { \langle\widehat{w}_j\rangle - w_j } { w_j } \right|\!,
+	\end{equation*}
+	где $j=\overline{0,\,1}$, для каждой пары $(\widehat{W}\!,\,\mathcal{M})$.
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/normal white noise hist.png}
+		\caption{Гистограмма Гауссова дискретного белого шума}
+		\label{noiseWNN}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/normal AR(1) noise.png}
+		\caption{Реализация Гауссова AR(1) шума}
+		\label{noiseARN}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Laplace white noise hist.png}
+		\caption{Гистограмма дискретного белого шума Лапласа}
+		\label{noiseWNL}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Laplace AR(1) noise.png}
+		\caption{Реализация AR(1) шума Лапласа}
+		\label{noiseARL}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/logistic white noise hist.png}
+		\caption{Гистограмма логистического дискретного белого шума}
+		\label{noiseWNLog}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/logistic AR(1) noise.png}
+		\caption{Реализация логистического AR(1) шума}
+		\label{noiseARLog}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Cauchy white noise hist.png}
+		\caption{Гистограмма дискретного белого шума Стьюдента с числом степеней свободы 1 (Коши)}
+		\label{noiseWNt1}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Cauchy AR(1) noise.png}
+		\caption{Реализация AR(1) шума Стьюдента с числом степеней свободы 1 (Коши)}
+		\label{noiseARt1}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Student(2) white noise hist.png}
+		\caption{Гистограмма дискретного белого шума Стьюдента с числом степеней свободы 2}
+		\label{noiseWNt2}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Student(2) AR(1) noise.png}
+		\caption{Реализация AR(1) шума Стьюдента с числом степеней свободы 2}
+		\label{noiseARt2}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Student(3) white noise hist.png}
+		\caption{Гистограмма дискретного белого шума Стьюдента с числом степеней свободы 3}
+		\label{noiseWNt3}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Student(3) AR(1) noise.png}
+		\caption{Реализация AR(1) шума Стьюдента с числом степеней свободы 3}
+		\label{noiseARt3}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Student(4) white noise hist.png}
+		\caption{Гистограмма дискретного белого шума Стьюдента с числом степеней свободы 4}
+		\label{noiseWNt4}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Student(4) AR(1) noise.png}
+		\caption{Реализация AR(1) шума Стьюдента с числом степеней свободы 4}
+		\label{noiseARt4}
+	\end{figure}
+	
+	\newpage
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Tukey white noise hist.png}
+		\caption{Гистограмма загрязнённого Гауссова дискретного белого шума \\ (Тьюки --- Хьюбера)}
+		\label{noiseWNCN}
+	\end{figure}
+	\begin{figure}[h!]
+		\centering\includegraphics[width=0.9\textwidth]{./../data/noises/Tukey AR(1) noise.png}
+		\caption{Реализация загрязнённого Гауссова AR(1) шума \\ (Тьюки --- Хьюбера)}
+		\label{noiseARCN}
+	\end{figure}
+	
+	\newpage
+	\begin{center}
+		\section{Экспериментальные данные}
+	\end{center}
+	
+	Вычислительный эксперимент реализован на языке Python средствами библиотеки \texttt{statsmodels}. МНМ-оценки и М-оценки вычисляются методом итерационного перевзвешивания наименьших квадратов.% МНК-оценки получены с помощью класса \texttt{statsmodels.regression.linear\_model.OLS}, МНМ-оценки --- с помощью класса \texttt{statsmodels.regression.quantile\_regression.QuantReg}, М-оценки Хьюбера и Тьюки --- с помощью классов \texttt{statsmodels.robust.robust\_linear\_model.RLM}, \texttt{statsmodels.robust.norms.HuberT} и \texttt{statsmodels.robust.norms.TukeyBiweight}.
+	
+	Результаты оценивания параметров регрессии приведены в таблице. Символами WN и AR(1) обозначены соответственно модели дискретного белого шума и авторегрессии I~порядка. Для распределений используются следующие обозначения:
+	\begin{itemize}
+		\item $\normallaw$ --- нормальное (Гауссово);
+		\item $\Laplacelaw$ --- Лапласа;
+		\item $\logisticlaw$ --- логистическое;
+		\item $\Studentlaw_n$ --- Стьюдента с $n$ степенями свободы;
+		\item $\Tukeylaw$ --- загрязнённое нормальное (Тьюки --- Хьюбера).
+	\end{itemize}
+	Для типов оценок параметров используются следующие обозначения:
+	\begin{itemize}
+		\item OLS --- МНК;
+		\item LAD --- МНМ;
+		\item Huber --- М-оценки с функцией потерь Хьюбера;
+		\item Tukey --- М-оценки с функцией потерь Тьюки.
+	\end{itemize}
+	
+	\newpage
+	\begin{center}
+		\begin{tabular}{|c|c||ccc|ccc||ccc|ccc|}
+			\hline
+			\multirow{2}{*}{noise} & \multirow{2}{*}{loss} &
+			\multicolumn{6}{c||}{WN} & \multicolumn{6}{c|}{AR(1)} \\
+			\cline{3-14}
+			&
+			& $\langle\widehat{w_0}\rangle$ & $\widehat{\sigma}(\widehat{w_0})$ & $\delta(\widehat{w_0})$
+			& $\langle\widehat{w_1}\rangle$ & $\widehat{\sigma}(\widehat{w_1})$ & $\delta(\widehat{w_1})$
+			& $\langle\widehat{w_0}\rangle$ & $\widehat{\sigma}(\widehat{w_0})$ & $\delta(\widehat{w_0})$
+			& $\langle\widehat{w_1}\rangle$ & $\widehat{\sigma}(\widehat{w_1})$ & $\delta(\widehat{w_1})$ \\
+			\hline
+			\multirow{4}{*}{$\normallaw$}
+			& OLS   & 3.002 & 0.017 & 6e-4 & 2.000 & 0.032 & 2e-5 & 3.003 & 0.034 & 1e-3 & 2.001 & 0.062 & 5e-4 \\
+			& LAD   & 3.004 & 0.024 & 1e-3 & 1.998 & 0.042 & 1e-3 & 3.002 & 0.039 & 7e-4 & 2.004 & 0.074 & 2e-3 \\
+			& Huber & 3.002 & 0.018 & 7e-4 & 2.000 & 0.034 & 9e-5 & 3.004 & 0.034 & 1e-3 & 2.000 & 0.064 & 7e-5 \\
+			& Tukey & 3.002 & 0.018 & 7e-4 & 2.000 & 0.034 & 1e-4 & 3.003 & 0.034 & 1e-3 & 2.000 & 0.064 & 2e-4 \\
+			\hline
+			\multirow{4}{*}{$\Laplacelaw$}
+			& OLS   & 3.001 & 0.028 & 2e-4 & 2.002 & 0.050 & 9e-4 & 3.001 & 0.055 & 4e-4 & 2.003 & 0.098 & 2e-3 \\
+			& LAD   & 3.001 & 0.024 & 3e-4 & 1.999 & 0.041 & 6e-4 & 3.005 & 0.054 & 2e-3 & 1.994 & 0.093 & 3e-3 \\
+			& Huber & 3.002 & 0.025 & 6e-4 & 1.999 & 0.043 & 5e-4 & 3.003 & 0.053 & 1e-3 & 2.000 & 0.092 & 2e-4 \\
+			& Tukey & 3.003 & 0.025 & 1e-3 & 1.997 & 0.044 & 1e-3 & 3.004 & 0.052 & 1e-3 & 1.998 & 0.091 & 9e-4 \\
+			\hline
+			\multirow{4}{*}{$\logisticlaw$}
+			& OLS   & 3.004 & 0.034 & 1e-3 & 1.994 & 0.056 & 3e-3 & 3.007 & 0.066 & 2e-3 & 1.990 & 0.109 & 5e-3 \\
+			& LAD   & 3.005 & 0.033 & 2e-3 & 1.994 & 0.057 & 3e-3 & 3.005 & 0.065 & 2e-3 & 1.992 & 0.110 & 4e-3 \\
+			& Huber & 3.004 & 0.031 & 1e-3 & 1.995 & 0.053 & 3e-3 & 3.007 & 0.063 & 2e-3 & 1.989 & 0.104 & 5e-3 \\
+			& Tukey & 3.003 & 0.032 & 1e-3 & 1.994 & 0.054 & 3e-3 & 3.007 & 0.063 & 2e-3 & 1.988 & 0.105 & 6e-3 \\
+			\hline
+			\multirow{4}{*}{$\Studentlaw_1$}
+			& OLS   & 2.790 & 1.947 & 7e-2 & 2.350 & 2.799 & 2e-1 & 2.601 & 3.813 & 1e-1 & 2.641 & 5.394 & 3e-1 \\
+			& LAD   & 2.999 & 0.034 & 3e-4 & 1.997 & 0.062 & 1e-3 & 2.991 & 0.118 & 3e-3 & 2.020 & 0.227 & 1e-2 \\
+			& Huber & 2.997 & 0.038 & 8e-4 & 2.001 & 0.073 & 6e-4 & 2.985 & 0.166 & 5e-3 & 2.026 & 0.290 & 1e-2 \\
+			& Tukey & 3.000 & 0.031 & 1e-4 & 1.995 & 0.062 & 2e-3 & 2.995 & 0.121 & 2e-3 & 2.010 & 0.218 & 5e-3 \\
+			\hline
+			\multirow{4}{*}{$\Studentlaw_2$}
+			& OLS   & 3.007 & 0.074 & 2e-3 & 1.993 & 0.121 & 4e-3 & 3.013 & 0.144 & 4e-3 & 1.987 & 0.235 & 7e-3 \\
+			& LAD   & 3.006 & 0.027 & 2e-3 & 1.992 & 0.049 & 4e-3 & 3.007 & 0.063 & 2e-3 & 1.990 & 0.118 & 5e-3 \\
+			& Huber & 3.003 & 0.027 & 9e-4 & 1.995 & 0.049 & 3e-3 & 3.007 & 0.068 & 2e-3 & 1.989 & 0.128 & 5e-3 \\
+			& Tukey & 3.002 & 0.028 & 7e-4 & 1.995 & 0.049 & 3e-3 & 3.006 & 0.062 & 2e-3 & 1.990 & 0.118 & 5e-3 \\
+			\hline
+			\multirow{4}{*}{$\Studentlaw_3$}
+			& OLS   & 3.000 & 0.034 & 1e-5 & 2.003 & 0.060 & 2e-3 & 3.000 & 0.067 & 7e-5 & 2.006 & 0.116 & 3e-3 \\
+			& LAD   & 3.001 & 0.028 & 2e-4 & 2.003 & 0.052 & 2e-3 & 2.999 & 0.055 & 5e-4 & 2.015 & 0.101 & 7e-3 \\
+			& Huber & 3.001 & 0.024 & 3e-4 & 2.004 & 0.044 & 2e-3 & 3.000 & 0.054 & 3e-5 & 2.009 & 0.097 & 5e-3 \\
+			& Tukey & 3.001 & 0.024 & 4e-4 & 2.004 & 0.043 & 2e-3 & 3.000 & 0.052 & 2e-4 & 2.011 & 0.094 & 5e-3 \\
+			\hline
+			\multirow{4}{*}{$\Studentlaw_4$}
+			& OLS   & 2.999 & 0.025 & 3e-4 & 2.004 & 0.045 & 2e-3 & 2.999 & 0.048 & 4e-4 & 2.007 & 0.087 & 3e-3 \\
+			& LAD   & 3.001 & 0.027 & 2e-4 & 2.001 & 0.045 & 3e-4 & 3.003 & 0.050 & 9e-4 & 2.001 & 0.085 & 7e-4 \\
+			& Huber & 2.999 & 0.021 & 4e-4 & 2.004 & 0.039 & 2e-3 & 2.999 & 0.044 & 4e-4 & 2.007 & 0.078 & 3e-3 \\
+			& Tukey & 2.999 & 0.021 & 5e-4 & 2.004 & 0.038 & 2e-3 & 2.998 & 0.043 & 5e-4 & 2.007 & 0.075 & 4e-3 \\
+			\hline
+			\multirow{4}{*}{$\Tukeylaw$}
+			& OLS   & 2.993 & 0.067 & 2e-3 & 2.021 & 0.113 & 1e-2 & 2.987 & 0.131 & 4e-3 & 2.039 & 0.219 & 2e-2 \\
+			& LAD   & 2.998 & 0.031 & 6e-4 & 2.001 & 0.051 & 5e-4 & 2.997 & 0.064 & 9e-4 & 2.012 & 0.109 & 6e-3 \\
+			& Huber & 3.000 & 0.026 & 1e-4 & 2.002 & 0.045 & 1e-3 & 2.996 & 0.073 & 1e-3 & 2.016 & 0.125 & 8e-3 \\
+			& Tukey & 3.000 & 0.025 & 2e-6 & 2.000 & 0.042 & 2e-4 & 2.998 & 0.062 & 7e-4 & 2.009 & 0.108 & 5e-3 \\
+			\hline
+		\end{tabular}
+	\end{center}
+	
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/normal white noise.png}
+	%	\caption{Модели линейной регрессии при Гауссовом дискретном белом шуме}
+	%	\label{regressionWNN}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/normal AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при Гауссовом AR(1) шуме}
+	%	\label{regressionARN}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Laplace white noise.png}
+	%	\caption{Модели линейной регрессии при дискретном белом шуме Лапласа}
+	%	\label{regressionWNL}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Laplace AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при AR(1) шуме Лапласа}
+	%	\label{regressionARL}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/logistic white noise.png}
+	%	\caption{Модели линейной регрессии при логистическом дискретном белом шуме}
+	%	\label{regressionWNLog}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/logistic AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при логистическом AR(1) шуме}
+	%	\label{regressionARCLog}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Cauchy white noise.png}
+	%	\caption{Модели линейной регрессии при дискретном белом шуме Стьюдента с числом степеней свободы 1 (Коши)}
+	%	\label{regressionWNt1}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Cauchy AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при AR(1) шуме Стьюдента с числом степеней свободы 1 (Коши)}
+	%	\label{regressionARt1}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Student(2) white noise.png}
+	%	\caption{Модели линейной регрессии при дискретном белом шуме Стьюдента с числом степеней свободы 2}
+	%	\label{regressionWNt2}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Student(2) AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при AR(1) шуме Стьюдента с числом степеней свободы 2}
+	%	\label{regressionARt2}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Student(3) white noise.png}
+	%	\caption{Модели линейной регрессии при дискретном белом шуме Стьюдента с числом степеней свободы 3}
+	%	\label{regressionWNt3}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Student(3) AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при AR(1) шуме Стьюдента с числом степеней свободы 3}
+	%	\label{regressionARt3}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Student(4) white noise.png}
+	%	\caption{Модели линейной регрессии при дискретном белом шуме Стьюдента с числом степеней свободы 4}
+	%	\label{regressionWNt4}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Student(4) AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при AR(1) шуме Стьюдента с числом степеней свободы 4}
+	%	\label{regressionARt4}
+	%\end{figure}
+	%
+	%\newpage
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Tukey white noise.png}
+	%	\caption{Модели линейной регрессии при загрязнённом Гауссовом дискретном белом шуме (Тьюки --- Хьюбера)}
+	%	\label{regressionWNCN}
+	%\end{figure}
+	%\begin{figure}[h!]
+	%	\centering\includegraphics[width=0.9\textwidth]{./../data/regression/Tukey AR(1) noise.png}
+	%	\caption{Модели линейной регрессии при загрязнённом Гауссовом AR(1) шуме (Тьюки --- Хьюбера)}
+	%	\label{regressionARCN}
+	%\end{figure}
+	
+	\newpage
+	\begin{center}
+		\section{Выводы}
+	\end{center}
+	
+	По результатам вычислительного эксперимента можно сделать следующие выводы.
+	\begin{itemize}
+		\item В соответствии с теорией, МНК является самым подходящим методом при нормальном шуме.
+		\item При шуме Лапласа МНК показывает результаты несколько хуже других. Лучшие оценки даёт МНМ.
+		\item При логистическом шуме значительных различий в качестве результатов между исследуемыми методами не выявлено. Результаты несколько уступают в качестве результатам при шуме Лапласа.
+		\item МНК хуже других справляется с распределением Стьюдента. При шуме $\Studentlaw_1$ (Коши) МНК фактически бесполезен, но с ростом числа степеней свободы его качество поднимается. При этом прочие методы дают приемлемые результаты при шуме Коши и не испытывают заметных потерь качества при шуме $\Studentlaw_n$, $n > 1$. Во многих случаях лучшие результаты показали М-оцен\-ки Хьюбера и Тьюки.
+		\item При загрязнённом нормальном шуме МНК также значительно уступает другим методам. МНМ и М-оценка Хьюбера справляются значительно лучше МНК. Лучшие результаты показала М-оценка Тьюки.
+		\item Для всех методов и распределений переход от белого шума к автокоррелированному шуму приводит к падению качества оценивания параметров зависимости. Выбор наилучшего метода определяется распределением белого шума, на котором основана модель AR(1), по тем же правилам, что и в случае белого аддитивного шума.
+	\end{itemize}
+	В результате выполнения работы заявленная цель была достигнута. Все поставленные задачи также были выполнены.
+	
+	\newpage
+	\begin{center}
+		\begin{thebibliography}{1}
+			\bibitem{stat} Горяинов В.\,Б., Павлов И.\,В., Цветкова Г.\,М., Тескин О.\,И. Математическая статистика: Учеб. для вузов / Под ред. В.\,С. Зарубина, А.\,П. Крищенко. -- М.: Изд-во МГТУ им. Н.\,Э. Баумана, 2001.
+			\bibitem{reg} Горяинова Е.\,Р., Ботвинкин Е.\,А. Экспериментальное и
+			аналитическое сравнение точности различных оценок параметров линейной регрессионной модели // Автомат. и телемех., 2017, выпуск 10, 109--129.
+			\bibitem{asympt1} Себер Дж. Линейный регрессионный анализ. М.: Мир, 1980.
+			\bibitem{asympt2} Basset G., Koenker R. Asymptotic theory of least absolute error regression // JASA. 1978. V. 73. No. 363. P. 618--622.
+			\bibitem{asympt3} Pollard D. Asymptotics for least absolute deviation regression estimators // Econometric Theory. 1991. V. 7. P. 186--199.
+			\bibitem{asympt4} Болдин М.\,В., Симонова Г.\,И., Тюрин Ю.\,Н. Знаковый статистический анализ линейных моделей. М.: Наука, Физматлит, 1997.
+			\bibitem{asympt5} Maronna R.\,A., Martin D., Yohai V. Robust Statistics: Theory and Methods. Chichester: Wiley, 2006.
+		\end{thebibliography}
+	\end{center}
+	\addcontentsline{toc}{section}{Список литературы}
+	
+\end{document}
